@@ -45,6 +45,8 @@
 #include <sensor_msgs/point_cloud2_iterator.h>
 #include <string>
 #include <tf2_sensor_msgs/tf2_sensor_msgs.h>
+#include <pointcloud_to_laserscan/AdvancedLaserScan.h>
+#include <geometry_msgs/Point32.h>
 
 namespace pointcloud_to_laserscan
 {
@@ -110,6 +112,7 @@ void PointCloudToLaserScanNodelet::onInit()
 
   pub_ = nh_.advertise<sensor_msgs::LaserScan>("scan", 10, boost::bind(&PointCloudToLaserScanNodelet::connectCb, this),
                                                boost::bind(&PointCloudToLaserScanNodelet::disconnectCb, this));
+  advanced_pub = nh_.advertise<pointcloud_to_laserscan::AdvancedLaserScan>("advancedScan", 10);
 }
 
 void PointCloudToLaserScanNodelet::connectCb()
@@ -145,10 +148,14 @@ void PointCloudToLaserScanNodelet::cloudCb(const sensor_msgs::PointCloud2ConstPt
 {
   // build laserscan output
   sensor_msgs::LaserScan output;
+  pointcloud_to_laserscan::AdvancedLaserScan advancedOutput;
   output.header = cloud_msg->header;
+  advancedOutput.header = cloud_msg->header;
+
   if (!target_frame_.empty())
   {
     output.header.frame_id = target_frame_;
+    advancedOutput.header.frame_id = target_frame_;
   }
 
   output.angle_min = angle_min_;
@@ -161,7 +168,7 @@ void PointCloudToLaserScanNodelet::cloudCb(const sensor_msgs::PointCloud2ConstPt
 
   // determine amount of rays to create
   uint32_t ranges_size = std::ceil((output.angle_max - output.angle_min) / output.angle_increment);
-
+  advancedOutput.realCoordinates = std::vector<geometry_msgs::Point32>(ranges_size);
   // determine if laserscan rays with no obstacle data will evaluate to infinity or max_range
   if (use_inf_)
   {
@@ -237,10 +244,17 @@ void PointCloudToLaserScanNodelet::cloudCb(const sensor_msgs::PointCloud2ConstPt
     int index = (angle - output.angle_min) / output.angle_increment;
     if (range < output.ranges[index])
     {
+      geometry_msgs::Point32 p;
+      p.x = *iter_x;
+      p.y = *iter_y;
+      p.z = *iter_z;
+      advancedOutput.realCoordinates[index] = p;
       output.ranges[index] = range;
     }
   }
   pub_.publish(output);
+  advancedOutput.laserScan = output;
+  advanced_pub.publish(advancedOutput);
 }
 }  // namespace pointcloud_to_laserscan
 

@@ -12,10 +12,22 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_sensor_msgs
 )
 
+add_message_files(
+  FILES
+  AdvancedLaserScan.msg
+)
+
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+  sensor_msgs
+  geometry_msgs
+)
+
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES laserscan_to_pointcloud pointcloud_to_laserscan
-  CATKIN_DEPENDS laser_geometry message_filters nodelet roscpp sensor_msgs tf2 tf2_ros tf2_sensor_msgs
+  CATKIN_DEPENDS laser_geometry message_filters nodelet roscpp sensor_msgs tf2 tf2_ros tf2_sensor_msgs message_runtime
 )
 
 include_directories(

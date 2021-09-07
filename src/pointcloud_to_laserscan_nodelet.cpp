@@ -193,7 +193,7 @@ void PointCloudToLaserScanNodelet::cloudCb(const sensor_msgs::PointCloud2ConstPt
     }
     catch (tf2::TransformException& ex)
     {
-      NODELET_ERROR_STREAM("Transform failure: " << ex.what());
+      printf("Transform failure: %s", ex.what());
       return;
     }
   }
@@ -207,36 +207,39 @@ void PointCloudToLaserScanNodelet::cloudCb(const sensor_msgs::PointCloud2ConstPt
        iter_z(*cloud_out, "z");
        iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z)
   {
-    if (std::isnan(*iter_x) || std::isnan(*iter_y) || std::isnan(*iter_z))
+    float x = *iter_x;
+    float y = *iter_z;
+    float z = *iter_y;
+    if (std::isnan(x) || std::isnan(y) || std::isnan(z))
     {
-      NODELET_DEBUG("rejected for nan in point(%f, %f, %f)\n", *iter_x, *iter_y, *iter_z);
+      // printf("rejected for nan in point(%f, %f, %f)\n", x, y, z);
       continue;
     }
 
-    if (*iter_z > max_height_ || *iter_z < min_height_)
+    if (z > max_height_ || z < min_height_)
     {
-      NODELET_DEBUG("rejected for height %f not in range (%f, %f)\n", *iter_z, min_height_, max_height_);
+      // printf("rejected for height %f not in range (%f, %f)\n", z, min_height_, max_height_);
       continue;
     }
 
-    double range = hypot(*iter_x, *iter_y);
+    double range = hypot(x, y);
     if (range < range_min_)
     {
-      NODELET_DEBUG("rejected for range %f below minimum value %f. Point: (%f, %f, %f)", range, range_min_, *iter_x,
-                    *iter_y, *iter_z);
+      // printf("rejected for range %f below minimum value %f. Point: (%f, %f, %f)", range, range_min_, x,
+                    // y, z);
       continue;
     }
     if (range > range_max_)
     {
-      NODELET_DEBUG("rejected for range %f above maximum value %f. Point: (%f, %f, %f)", range, range_max_, *iter_x,
-                    *iter_y, *iter_z);
+      // printf("rejected for range %f above maximum value %f. Point: (%f, %f, %f)", range, range_max_, x,
+      //               y, z);
       continue;
     }
 
-    double angle = atan2(*iter_y, *iter_x);
+    double angle = atan2(y, x);
     if (angle < output.angle_min || angle > output.angle_max)
     {
-      NODELET_DEBUG("rejected for angle %f not in range (%f, %f)\n", angle, output.angle_min, output.angle_max);
+      // printf("rejected for angle %f not in range (%f, %f)\n", angle, output.angle_min, output.angle_max);
       continue;
     }
 

@@ -75,7 +75,7 @@ void PointCloudToLaserScanNodelet::onInit()
   int concurrency_level;
   private_nh_.param<int>("concurrency_level", concurrency_level, 1);
   private_nh_.param<bool>("use_inf", use_inf_, true);
-
+  private_nh_.param<bool>("vertical_camera", vertical, false);
   // Check if explicitly single threaded, otherwise, let nodelet manager dictate thread pool size
   if (concurrency_level == 1)
   {
@@ -207,9 +207,19 @@ void PointCloudToLaserScanNodelet::cloudCb(const sensor_msgs::PointCloud2ConstPt
        iter_z(*cloud_out, "z");
        iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z)
   {
-    float x = *iter_x;
-    float y = *iter_z;
-    float z = *iter_y;
+    float x = 0;
+    float y = 0;
+    float z = 0;
+    if (vertical){
+      x = *iter_x;
+      y = *iter_z;
+      z = *iter_y;
+    }else{
+      x = *iter_x;
+      y = *iter_y;
+      z = *iter_z;  
+    }
+    
     if (std::isnan(x) || std::isnan(y) || std::isnan(z))
     {
       // printf("rejected for nan in point(%f, %f, %f)\n", x, y, z);
